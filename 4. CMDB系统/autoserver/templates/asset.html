@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/static/bs/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/bstable/src/extensions/editable/bootstrap-editable.css">
+    <link rel="stylesheet" href="/static/bstable/dist/bootstrap-table.css">
+</head>
+<body>
+    <div class="panel-body" style="padding-bottom:0;">
+
+         <div class="navbar-form navbar-left">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search" id="searchText">
+            </div>
+            <button id="search" class="btn btn-default">Submit</button>
+         </div>
+
+        <div id="toolbar" class="btn-group">
+            <button id="btn_add" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>新增
+            </button>
+            <button id="btn_delete" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>删除
+            </button>
+        </div>
+        <table id="asset"></table>
+    </div>
+</body>
+
+<script src="/static/jquery-3.3.1.js"></script>
+<script src="/static/bs/dist/js/bootstrap.js"></script>
+<script src="/static/bstable/dist/bootstrap-table.js"></script>
+<script src="/static/bstable/dist/locale/bootstrap-table-zh-CN.js"></script>
+<script src="/static/bstable/dist/extensions/editable/bootstrap-table-editable.js"></script>
+<script src="/static/bootstrap-editable.min.js"></script>
+
+<script src="/static/custom/my.js"></script>
+
+<script>
+    $(function () {
+
+        $.ajax({
+            type: 'POST',
+            url: '/backend/get_config/',
+            data: {'tablename': 'asset'},
+            success: function (data) {
+                coldata = JSON.parse(data);
+
+                for (var i in coldata) {
+                    // 格式化formatter
+                    if (coldata[i]['formatter']) {
+                        var v = coldata[i]['formatter'];
+
+                        coldata[i]['formatter'] = (function (value, row, index) {
+                            choices = coldata[i][v];
+                            for (var index in choices) {
+                                if (choices[index][0] == value) {
+                                    return choices[index][1];
+                                }
+                            }
+                        })(i, v);
+
+                        // 格式化编辑
+                        if (coldata[i]['editable'].hasOwnProperty('type')) {
+                            for (var index in coldata[i][v]) {
+
+                                coldata[i]['editable']['source'].push({"value": coldata[i][v][index][1], "text":coldata[i][v][index][1]});
+                            }
+                        }
+                    }
+
+                    if(coldata[i]['field'] == 'idc__name'){
+                        //coldata[i]['field'] = 'id';
+                        coldata[i]['editable']['source'] = function () {
+
+                            var result = [];
+                            $.ajax({
+                                url: '/backend/get_idc',
+                                async: false,
+                                type: "get",
+                                success: function (data, status) {
+                                    resdata = JSON.parse(data);
+                                    $.each(resdata, function (key, value) {
+                                        result.push({ value: value.name, text: value.name });
+                                    });
+                                }
+                            });
+
+                            return result;
+                        }
+                    }
+                }
+
+                coldata.unshift({
+                    checkbox: true
+                });
+                initTable('asset', coldata, '/backend/ajax_asset/');
+                initSearch(coldata);
+
+            }
+        });
+        $("#search").bind("click",function(){
+            searchtext=$("#searchText").val();
+            if (searchtext==''){
+                alert("请输入需要搜索的用户名");
+                return
+            }
+            $("#searchText").val(searchtext);
+            $("#asset").bootstrapTable('refresh',{query: {text:searchtext}});
+        });
+
+        function initSearch(data){
+            console.log(data);
+
+            for(var i in data){
+                if(data[i].hasOwnProperty('asset_search')){
+                    search_config = data[i]['asset_search'];
+                    break;
+                }
+            }
+
+            /*
+            * [
+                    {"name": 'cabinet_num', 'text': '机柜号', 'search_type': 'input'},
+                    {"name": 'device_type_id', 'text': '资产类型', 'search_type': 'select', 'global_name': 'device_type_lists'},
+                    {"name": 'device_status_id', 'text': '资产状态', 'search_type': 'select',
+                     'global_name': 'device_status_lists'},
+                ]
+            * */
+
+            $.each(search_config, function(k, v){
+
+                $('#searchArea ul').append($('<li></li>').append($('<a></a>').html(v.text)));
+            })
+
+
+        }
+
+        $("#btn_delete").click(function(){
+            deleteData('asset');
+        });
+
+    });
+
+
+
+
+
+
+
+
+</script>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"  crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.4/css/buttons.dataTables.min.css"  crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/select/1.2.7/css/select.dataTables.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/keytable/2.5.0/css/keyTable.dataTables.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/editor.dataTables.min.css">
+
+</head>
+<body>
+    <div class="container">
+        <h2>服务器列表</h2>
+        <table id="servers" class="display" style="width:100%">
+
+
+        </table>
+    </div>
+
+
+</body>
+<script src="/static/jquery-3.3.1.js"></script>
+<script src="/static/jquery.dataTables.min.js"></script>
+<script src="/static/dataTables.buttons.min.js"></script>
+{#<script src="https://cdn.datatables.net/select/1.2.7/js/dataTables.select.min.js"></script>#}
+{#<script src="https://cdn.datatables.net/keytable/2.5.0/js/dataTables.keyTable.min.js"></script>#}
+{##}
+{##}
+{#<script src="/static/dataTables.editor.js"></script>#}
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.print.min.js"></script>
+
+<script>
+    var resdata;
+    $(document).ready(function() {
+
+        $.ajax({
+            "url" : "/backend/get_config/",
+            "type": "GET",
+            "success": function (data) {
+                resdata = JSON.parse(data);
+                checkbox = {"data": null, "className": "text-center", "title": "全选<input type='checkbox' name='checklist' id='checkall'/>"};
+{#                checkbox = {#}
+{#                    data: null,#}
+{#                    defaultContent: '',#}
+{#                    className: 'select-checkbox',#}
+{#                    orderable: false#}
+{#                };#}
+                resdata.unshift(checkbox);
+
+                operate =  {
+{#                    "data": null,#}
+{#                    "title": "操作",#}
+{#                    "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {#}
+{#                        $(nTd).html("<a href='javascript:void(0);' " +#}
+{#                        "onclick='_editFun(\"" + oData.id + "\",\"" + oData.hostname + "\",\"" + oData.sn + "\",\"" + oData.note + "\")'>编辑</a>&nbsp;&nbsp;")#}
+{#                            .append("<a href='javascript:void(0);' onclick='_deleteFun(" + sData + ")'>删除</a>");#}
+{#                    }#}
+
+                    "data": null,
+                    "title": "操作",
+                    "className": "center",
+                    "defaultContent": '<button  class="editor_edit">更新</button> | <button  class="editor_remove">删除</button>'
+                };
+                resdata.push(operate);
+
+                $('#servers').DataTable({
+                    "ajax": "/backend/ajax_server/",
+                    dom: '<"dt-panelmenu clearfix"l<"btn-group-table col-xs-4"B>fr>t<"dt-panelfooter clearfix"ip>',
+{#                    dom: 'Bfrtip',#}
+                    "columns": resdata,
+                    "language": {
+                        "url": "http://cdn.datatables.net/plug-ins/1.10.16/i18n/Chinese.json"
+                    },
+                    "order": [[1, "asc"]],
+                    "columnDefs": [{
+                        // 指定第一列，从0开始，0表示第一列，1表示第二列……
+                        targets: 0,
+                        render: function (data, type, row, meta) {
+                            return '<input type="checkbox" name="checklist" value="' + row.id + '" />'
+                        }
+                    }, {
+                        "orderable": false,
+                        "targets": [0, -1]  //设置第一列和最后一列不可排序
+                    }],
+
+                    buttons: [
+                         'copy', 'excel', 'pdf'
+                    ]
+                });
+            }
+        });
+
+         $("#servers").on('click', "#checkall", function () {
+            $("input[name='checklist']").prop("checked", $(this).prop("checked"));
+         });
+
+         $('#servers').on('click', 'button.editor_edit', function (e) {
+            len = $(this).parent().siblings().length;
+            htmlval = $(this).parent().siblings();
+
+            for (var i=1; i<len; i++){
+                console.log(htmlval[i]);
+            }
+
+            var theader = [];
+            for(var i in resdata){
+                if(i>0){
+                    theader.push(resdata[i]['title']);
+                }
+            }
+            theader.pop();
+            console.log(theader);
+
+
+        });
+
+        // Delete a record
+        $('#servers').on('click', 'button.editor_remove', function (e) {
+            e.preventDefault();
+
+            editor.remove( $(this).closest('tr'), {
+                title: 'Delete record',
+                message: 'Are you sure you wish to remove this record?',
+                buttons: 'Delete'
+            } );
+        } );
+
+
+    });
+</script>
+</html>

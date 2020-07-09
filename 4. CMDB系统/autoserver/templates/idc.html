@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/static/bs/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/bstable/src/extensions/editable/bootstrap-editable.css">
+    <link rel="stylesheet" href="/static/bstable/dist/bootstrap-table.css">
+</head>
+<body>
+    <div class="panel-body" style="padding-bottom:0;">
+
+        <div id="toolbar" class="btn-group">
+            <button id="btn_add" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>新增
+            </button>
+            <button id="btn_delete" type="button" class="btn btn-default">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>删除
+            </button>
+        </div>
+        <table id="idc"></table>
+    </div>
+</body>
+
+<script src="/static/jquery-3.3.1.js"></script>
+<script src="/static/bs/dist/js/bootstrap.js"></script>
+<script src="/static/bstable/dist/bootstrap-table.js"></script>
+<script src="/static/bstable/dist/locale/bootstrap-table-zh-CN.js"></script>
+<script src="/static/bstable/dist/extensions/editable/bootstrap-table-editable.js"></script>
+<script src="/static/bootstrap-editable.min.js"></script>
+
+<script src="/static/custom/my.js"></script>
+
+<script>
+    $(function () {
+        tablename = 'idc';
+
+        $.ajax({
+            type: 'POST',
+            url: '/backend/get_config/',
+            data: {'tablename': tablename},
+            success: function (data) {
+
+                coldata = JSON.parse(data);
+                for (var i in coldata) {
+                    // 格式化formatter
+                    if(coldata[i]['field'] == 'name'){
+                        //coldata[i]['field'] = 'id';
+                        coldata[i]['editable']['source'] = function () {
+
+                            var result = [];
+                            $.ajax({
+                                url: '/backend/get_idc',
+                                async: false,
+                                type: "get",
+                                success: function (data, status) {
+                                    resdata = JSON.parse(data);
+                                    $.each(resdata, function (key, value) {
+                                        result.push({ value: value.name, text: value.name });
+                                    });
+                                }
+                            });
+
+                            return result;
+                        }
+                    }
+                }
+
+                coldata.unshift({
+                    checkbox: true
+                });
+                initTable(tablename, coldata, '/backend/get_idc/');
+            }
+        });
+
+
+        $("#btn_delete").click(function(){
+            deleteData(tablename);
+        });
+
+    });
+
+
+
+
+
+
+
+
+</script>
+</html>
